@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "workshop_cleaner-core",
+    "workshop_cleaner-cli",
+]
