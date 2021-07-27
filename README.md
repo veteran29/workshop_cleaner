@@ -1,4 +1,4 @@
-# Workshop Cleaner
+# Workshop Cleaner ![Github All Releases](https://img.shields.io/github/downloads/veteran29/workshop_cleaner/total.svg)
 
 This simple utility (mainly written as Rust language learning excercise) will search for Steam Workshop items that are installed but not subscribed by currently logged user.
 
