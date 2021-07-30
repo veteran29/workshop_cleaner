@@ -1372,7 +1372,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_cleaner-cli"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "dialoguer",
  "humansize",
@@ -1382,7 +1382,7 @@ dependencies = [
 
 [[package]]
 name = "workshop_cleaner-core"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "fs_extra",
  "steamlocate",
