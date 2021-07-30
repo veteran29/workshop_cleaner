@@ -1376,6 +1376,10 @@ version = "0.0.2"
 dependencies = [
  "dialoguer",
  "humansize",
+ "lazy_static",
+ "reqwest",
+ "serde",
+ "serde_json",
  "steam-workshop-api",
  "workshop_cleaner-core",
 ]

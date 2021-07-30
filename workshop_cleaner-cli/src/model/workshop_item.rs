@@ -1,4 +1,4 @@
-pub struct WorkshopItem {
+pub(crate) struct WorkshopItem {
     pub id: workshop_cleaner_core::PublishedFileId,
     pub title: String,
 }

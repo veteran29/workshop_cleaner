@@ -1,9 +1,12 @@
-use model::workshop_item::WorkshopItem;
+#[macro_use]
+extern crate lazy_static;
+
+use model::WorkshopItem;
 use workshop_cleaner_core::{self, init, locator::SteamLocator};
 
 mod io;
 mod model;
-mod workshop;
+mod steam;
 
 fn main() {
     let theme = io::theme();
@@ -12,7 +15,7 @@ fn main() {
     let mut app_prompt = dialoguer::Select::with_theme(&theme);
     let apps = SteamLocator::new().get_installed_workshop_apps();
     for app in &apps {
-        app_prompt.item(format!("{}", app.0));
+        app_prompt.item(io::app_id_to_prompt_item(app));
     }
     let selected_app = app_prompt
         .with_prompt("Please select app to check")
@@ -30,7 +33,7 @@ fn main() {
         .into_iter()
         .map(|id| WorkshopItem {
             id,
-            title: match crate::workshop::get_workshop_item_details(&id) {
+            title: match crate::steam::get_workshop_item_details(&id) {
                 Some(i) => i.title,
                 None => "Unknown".to_string(),
             },
