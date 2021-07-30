@@ -47,7 +47,7 @@ fn main() {
 
         print!("Removing - {}", item);
 
-        match cleaner.remove_item(&item.id, false) {
+        match cleaner.remove_item(&item.id, true) {
             Ok(_) => println!(": OK"),
             Err(e) => println!(": ERR ({})", e),
         }
