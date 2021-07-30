@@ -1,17 +1,30 @@
 use model::workshop_item::WorkshopItem;
-use workshop_cleaner_core::{self, init, AppId};
+use workshop_cleaner_core::{self, init, locator::SteamLocator};
 
 mod io;
 mod model;
 mod workshop;
 
 fn main() {
-    let cleaner = init(AppId(107410)).unwrap();
+    let theme = io::theme();
+
+    // App selection
+    let mut app_prompt = dialoguer::Select::with_theme(&theme);
+    let apps = SteamLocator::new().get_installed_workshop_apps();
+    for app in &apps {
+        app_prompt.item(format!("{}", app.0));
+    }
+    let selected_app = app_prompt
+        .with_prompt("Please select app to check")
+        .interact()
+        .unwrap();
+
+    // Init cleaner with selected app
+    let cleaner = init(apps[selected_app]).unwrap();
+
     println!("\n\n"); // add padding after steam init output
 
-    let theme = io::theme();
-    let mut prompt = dialoguer::MultiSelect::with_theme(&theme);
-
+    // Get workshop items to clean and get thier detials from web api
     let items: Vec<WorkshopItem> = cleaner
         .get_installed_not_subscribed_items()
         .into_iter()
@@ -29,6 +42,8 @@ fn main() {
         return;
     }
 
+    // Build the list of workshop items
+    let mut prompt = dialoguer::MultiSelect::with_theme(&theme);
     for item in &items {
         prompt.item(io::workshop_to_prompt_item(&cleaner, &item));
     }
