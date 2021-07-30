@@ -24,7 +24,7 @@ impl SteamLocator {
         let libraries = &self.steam.libraryfolders().paths;
 
         let workshop_apps: Vec<AppId> = libraries
-            .into_iter()
+            .iter()
             .map(|p| fs::read_dir(format!("{}\\workshop\\content", p.to_str().unwrap())).unwrap())
             .flat_map(|r| {
                 let app_ids: Vec<AppId> = r

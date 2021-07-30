@@ -59,7 +59,7 @@ fn main() {
         .interact()
         .unwrap();
 
-    println!("");
+    println!();
     for selected in selections {
         let item = &items[selected];
 
@@ -70,7 +70,7 @@ fn main() {
             Err(e) => println!(": ERR ({})", e),
         }
     }
-    println!("");
+    println!();
 
     io::wait_for_keypress();
 }

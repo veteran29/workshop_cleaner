@@ -30,13 +30,11 @@ impl WorkshopCleaner {
     pub fn get_workshop_dir(&self) -> PathBuf {
         let app_path = self.client.apps().app_install_dir(self.app_id);
 
-        let path = PathBuf::from(app_path)
+        PathBuf::from(app_path)
             .join("../../workshop/content")
             .join(self.app_id.0.to_string())
             .canonicalize()
-            .expect("Could not find workshop dir");
-
-        path
+            .expect("Could not find workshop dir")
     }
 
     pub fn get_subscribed_items(&self) -> Vec<steamworks::PublishedFileId> {
@@ -98,7 +96,7 @@ impl WorkshopCleaner {
         if unsubscribe {
             let (tx, rx) = channel();
             self.client.ugc().unsubscribe_item(*item_id, move |res| {
-                tx.send(!res.is_err()).expect("Could not send signal");
+                tx.send(res.is_ok()).expect("Could not send signal");
             });
 
             if !rx.recv().expect("Could not receive signal") {
