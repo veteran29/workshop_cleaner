@@ -10,7 +10,10 @@ pub struct WorkshopCleaner {
 }
 
 impl WorkshopCleaner {
-    pub(crate) fn new(app_id: steamworks::AppId, client: steamworks::Client) -> Result<Self, String> {
+    pub(crate) fn new(
+        app_id: steamworks::AppId,
+        client: steamworks::Client,
+    ) -> Result<Self, String> {
         if !client.apps().is_app_installed(app_id) {
             return Err(format!("Selected app {} is not installed", app_id.0));
         }

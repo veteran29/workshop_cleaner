@@ -1,6 +1,6 @@
 use std::thread;
 
-use steamworks::{AppIDs, AppId, Client};
+use steamworks::Client;
 
 pub use steamworks::{AppId, PublishedFileId};
 
