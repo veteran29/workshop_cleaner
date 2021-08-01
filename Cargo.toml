@@ -2,4 +2,5 @@
 members = [
     "workshop_cleaner-core",
     "workshop_cleaner-cli",
+    "workshop_cleaner-gui",
 ]
