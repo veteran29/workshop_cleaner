@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Display};
 
+use controller::{AppListController, MainController};
 use data::{AppState, SteamApp, SteamWorkshopItem};
 use druid::im::{vector, Vector};
 use druid::lens::{self, LensExt};
@@ -8,38 +9,35 @@ use druid::{AppLauncher, Color, Data, Lens, UnitPoint, Widget, WidgetExt, Window
 
 use workshop_cleaner_core::locator::SteamLocator;
 
+use crate::delegate::Delegate;
+
+mod cmd;
 mod controller;
 mod data;
+mod delegate;
 
 fn main() {
     let main_window = WindowDesc::new(ui_builder)
         .window_size((1000.0, 512.0))
         .title("Workshop Cleaner");
 
-    let apps = SteamLocator::new()
-        .get_installed_workshop_apps()
-        .iter()
-        .map(|a| data::SteamApp {
-            app_id: a.0,
-            name: "Unkown".to_string(),
-            workshop_items: vector!(),
-        })
-        .collect();
-
-    let state = data::AppState {
-        apps,
-        items: vector!(),
+    let state = AppState {
+        apps: vector![],
+        items: vector![],
     };
+
+    let delegate = Delegate {};
 
     AppLauncher::with_window(main_window)
         .use_simple_logger()
+        .delegate(delegate)
         .launch(state)
         .expect("App launch failed");
 }
 
 const MAIN_LAYOUT_SPLIT_POINT: f64 = 0.3;
 
-fn ui_builder() -> impl Widget<data::AppState> {
+fn ui_builder() -> impl Widget<AppState> {
     let apps_col = Scroll::new(Either::new(
         |data: &Vector<SteamApp>, _env| !data.is_empty(),
         List::new(app_widget),
@@ -66,7 +64,8 @@ fn ui_builder() -> impl Widget<data::AppState> {
         .split_point(MAIN_LAYOUT_SPLIT_POINT)
         .solid_bar(true)
         .draggable(true)
-        .debug_paint_layout()
+        .controller(MainController::new())
+    // .debug_paint_layout()
 }
 
 const LIST_ITEM_HEIGHT: f64 = 50.0;
