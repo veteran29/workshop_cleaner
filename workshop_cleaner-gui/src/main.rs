@@ -21,17 +21,10 @@ fn main() {
         .window_size((1000.0, 512.0))
         .title("Workshop Cleaner");
 
-    let state = AppState {
-        apps: vector![],
-        items: vector![],
-    };
-
-    let delegate = Delegate {};
-
     AppLauncher::with_window(main_window)
         .use_simple_logger()
-        .delegate(delegate)
-        .launch(state)
+        .delegate(Delegate::new())
+        .launch(AppState::default())
         .expect("App launch failed");
 }
 
@@ -39,12 +32,15 @@ const MAIN_LAYOUT_SPLIT_POINT: f64 = 0.3;
 
 fn ui_builder() -> impl Widget<AppState> {
     let apps_col = Scroll::new(Either::new(
-        |data: &Vector<SteamApp>, _env| !data.is_empty(),
-        List::new(app_widget),
-        Label::new("No workshop apps found")
+        |data: &Option<Vector<SteamApp>>, _env| {
+                println!("{:?}", data);
+                data.is_some()
+            },
+            app_list_widget(),
+            Label::new("Scanning for apps...")
             .padding(20.)
             .align_horizontal(UnitPoint::CENTER)
-            .expand_width(),
+            .expand_width()
     ))
     .vertical()
     .lens(AppState::apps);
@@ -55,7 +51,7 @@ fn ui_builder() -> impl Widget<AppState> {
         Label::new("Nothing found, your workshop is clean")
             .padding(20.)
             .align_horizontal(UnitPoint::CENTER)
-            .expand_width(),
+            .expand_width()
     ))
     .vertical()
     .lens(AppState::items);
@@ -71,7 +67,21 @@ fn ui_builder() -> impl Widget<AppState> {
 const LIST_ITEM_HEIGHT: f64 = 50.0;
 const LIST_ITEM_PADDING: f64 = 10.0;
 
-fn app_widget<T>() -> impl Widget<T>
+fn app_list_widget() -> impl Widget<Option<Vector<SteamApp>>> {
+    Either::new(
+        |data: &Vector<SteamApp>, _env| !data.is_empty(),
+        List::new(app_list_item_widget),
+        Label::new("No workshop apps")
+            .padding(20.)
+            .align_horizontal(UnitPoint::CENTER)
+            .expand_width()
+    ).lens(lens::Identity.map(
+        |d: &Option<Vector<SteamApp>>| d.clone().unwrap_or_else(|| vector![]),
+        |_d, _input| ()
+    ))
+}
+
+fn app_list_item_widget<T>() -> impl Widget<T>
 where
     T: Data + Display,
 {

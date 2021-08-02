@@ -18,10 +18,12 @@ impl MainController {
         &self,
         ctx: &druid::EventCtx,
         _event: &druid::Event,
-        _data: &AppState,
+        data: &mut AppState,
         _env: &druid::Env,
     ) {
         // Initialize apps list
+        data.apps = None;
+
         let sink = ctx.get_external_handle();
         std::thread::spawn(move || {
             let apps: Vector<SteamApp> = SteamLocator::new()

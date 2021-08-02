@@ -4,6 +4,12 @@ use crate::{cmd as commands, data::AppState};
 
 pub struct Delegate {}
 
+impl Delegate {
+    pub fn new() -> Self {
+        Delegate {}
+    }
+}
+
 impl AppDelegate<AppState> for Delegate {
     fn command(
         &mut self,
@@ -14,7 +20,7 @@ impl AppDelegate<AppState> for Delegate {
         env: &druid::Env,
     ) -> druid::Handled {
         if let Some(apps) = cmd.get(commands::SET_STEAM_APPS).cloned() {
-            data.apps.append(apps);
+            data.apps = Some(apps);
         }
 
         druid::Handled::No
