@@ -5,11 +5,9 @@ use data::{AppState, SteamApp, SteamWorkshopItem};
 use druid::im::{vector, Vector};
 use druid::lens::{self, LensExt};
 use druid::widget::{Button, Either, Flex, Label, List, Scroll, Split};
-use druid::{AppLauncher, Color, Data, Lens, UnitPoint, Widget, WidgetExt, WindowDesc};
+use druid::{AppLauncher, Color, Data, EventCtx, Lens, UnitPoint, Widget, WidgetExt, WindowDesc};
 
-use workshop_cleaner_core::locator::SteamLocator;
-
-use crate::delegate::Delegate;
+use crate::{controller::AppListItemController, delegate::Delegate};
 
 mod cmd;
 mod controller;
@@ -31,16 +29,14 @@ fn main() {
 const MAIN_LAYOUT_SPLIT_POINT: f64 = 0.3;
 
 fn ui_builder() -> impl Widget<AppState> {
+    // TODO move to module, LayoutSwitcher
     let apps_col = Scroll::new(Either::new(
-        |data: &Option<Vector<SteamApp>>, _env| {
-                println!("{:?}", data);
-                data.is_some()
-            },
-            app_list_widget(),
-            Label::new("Scanning for apps...")
+        |data: &Option<Vector<SteamApp>>, _env| data.is_some(),
+        app_list_widget(),
+        Label::new("Scanning for apps...")
             .padding(20.)
             .align_horizontal(UnitPoint::CENTER)
-            .expand_width()
+            .expand_width(),
     ))
     .vertical()
     .lens(AppState::apps);
@@ -51,7 +47,7 @@ fn ui_builder() -> impl Widget<AppState> {
         Label::new("Nothing found, your workshop is clean")
             .padding(20.)
             .align_horizontal(UnitPoint::CENTER)
-            .expand_width()
+            .expand_width(),
     ))
     .vertical()
     .lens(AppState::items);
@@ -70,26 +66,29 @@ const LIST_ITEM_PADDING: f64 = 10.0;
 fn app_list_widget() -> impl Widget<Option<Vector<SteamApp>>> {
     Either::new(
         |data: &Vector<SteamApp>, _env| !data.is_empty(),
-        List::new(app_list_item_widget),
+        List::new(app_list_item_widget).controller(AppListController::new()),
         Label::new("No workshop apps")
             .padding(20.)
             .align_horizontal(UnitPoint::CENTER)
-            .expand_width()
-    ).lens(lens::Identity.map(
+            .expand_width(),
+    )
+    .lens(lens::Identity.map(
         |d: &Option<Vector<SteamApp>>| d.clone().unwrap_or_else(|| vector![]),
-        |_d, _input| ()
-    ))
+        |_d, _input| (),
+    )) // TODO pass tuple of item and currently selected app to the list so it can dynamically detect which one is selected
 }
 
-fn app_list_item_widget<T>() -> impl Widget<T>
-where
-    T: Data + Display,
-{
-    Label::new(|item: &T, _env: &_| format!("{}", item))
-        .align_vertical(UnitPoint::LEFT)
+fn app_list_item_widget() -> impl Widget<SteamApp> {
+    let label =
+        Label::new(|item: &SteamApp, _env: &_| format!("{}", item)).align_vertical(UnitPoint::LEFT);
+
+    Flex::row()
+        .with_child(label)
         .padding(LIST_ITEM_PADDING)
-        .expand()
+        .expand_width()
         .height(LIST_ITEM_HEIGHT)
+        .background(Color::from_hex_str("0000").unwrap())
+        .controller(AppListItemController::new())
 }
 
 fn item_widget<T>() -> impl Widget<T>
