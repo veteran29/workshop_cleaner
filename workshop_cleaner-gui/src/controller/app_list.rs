@@ -1,12 +1,16 @@
 use druid::im::{vector, Vector};
 use druid::widget::{Container, Flex};
 use druid::{widget::Controller, Data, Widget};
-use druid::{Color, Cursor, Target};
+use druid::{Color, Cursor, Rect, Selector, Target};
 use workshop_cleaner_core::locator::SteamLocator;
 
 use crate::cmd as command;
 use crate::data::{AppState, SteamApp};
 use std::thread;
+
+const COLOR_TRANSPARENT: Color = Color::rgba8(0, 0, 0, 0);
+
+const SET_HOVER: Selector<bool> = Selector::new("app-list.hover");
 
 pub struct AppListController {}
 
@@ -31,22 +35,46 @@ impl AppListItemController {
         }
     }
 
-    fn get_current_color(&self) -> Color {
-        if self.selected {
-            Color::RED
-        } else {
-            Color::rgba8(0, 0, 0, 0)
+    fn on_hover<T: Data>(
+        &mut self,
+        child: &mut Container<T>,
+        ctx: &mut druid::EventCtx,
+        hover: bool,
+    ) {
+        if hover != self.hover {
+            self.hover = hover;
+
+            if hover {
+                ctx.set_cursor(&Cursor::OpenHand);
+            } else {
+                ctx.clear_cursor();
+            }
+
+            self.paint_background(child);
         }
     }
 
-    fn set_background<T: Data>(
-        &self,
+    fn on_selected<T: Data>(
+        &mut self,
         child: &mut Container<T>,
         ctx: &mut druid::EventCtx,
-        color: Color,
+        selected: bool,
     ) {
-        child.set_background(color);
+        self.selected = selected;
+
+        self.paint_background(child);
         ctx.request_paint();
+    }
+
+    fn paint_background<T: Data>(&self, child: &mut Container<T>) {
+        let color = match (self.hover, self.selected) {
+            (true, true) => Color::RED,
+            (false, true) => Color::MAROON,
+            (true, false) => Color::GRAY,
+            _ => COLOR_TRANSPARENT,
+        };
+
+        child.set_background(color);
     }
 }
 
@@ -65,29 +93,14 @@ impl Controller<SteamApp, Container<SteamApp>> for AppListItemController {
                     .submit_command(command::SELECT_STEAM_APP, data.clone(), Target::Auto)
                     .expect("Failed to send command");
             }
-            // TODO custom wrapping widget with "on hover" color
-            druid::Event::MouseMove(_) => {
-                let hover = ctx.is_hot();
-                if hover != self.hover {
-                    self.hover = hover;
-
-                    println!("{:?} - {}", data, hover);
-
-                    if hover {
-                        ctx.set_cursor(&Cursor::OpenHand);
-                        self.set_background(child, ctx, Color::GRAY);
-                    } else {
-                        ctx.clear_cursor();
-                        self.set_background(child, ctx, self.get_current_color());
-                    }
-
-                    ctx.request_paint();
-                }
-            }
             druid::Event::Command(cmd) => {
                 if let Some(app) = cmd.get(command::SELECT_STEAM_APP) {
-                    self.selected = app.app_id == data.app_id;
-                    self.set_background(child, ctx, self.get_current_color());
+                    let selected = app.app_id == data.app_id;
+                    self.on_selected(child, ctx, selected);
+                }
+
+                if let Some(hot) = cmd.get(SET_HOVER) {
+                    self.on_hover(child, ctx, *hot);
                 }
             }
             _ => (),
@@ -96,14 +109,21 @@ impl Controller<SteamApp, Container<SteamApp>> for AppListItemController {
         child.event(ctx, event, data, env)
     }
 
-    fn update(
+    fn lifecycle(
         &mut self,
         child: &mut Container<SteamApp>,
-        ctx: &mut druid::UpdateCtx,
-        old_data: &SteamApp,
+        ctx: &mut druid::LifeCycleCtx,
+        event: &druid::LifeCycle,
         data: &SteamApp,
         env: &druid::Env,
     ) {
-        child.update(ctx, old_data, data, env)
+        match event {
+            druid::LifeCycle::HotChanged(hot) => {
+                ctx.submit_command(SET_HOVER.with(*hot).to(Target::Widget(ctx.widget_id())));
+            }
+            _ => (),
+        }
+
+        child.lifecycle(ctx, event, data, env)
     }
 }
