@@ -17,7 +17,7 @@ impl fmt::Display for SteamApp {
 }
 
 #[derive(Clone, Debug, Data)]
-pub struct SteamWorkshopItem(u64);
+pub struct SteamWorkshopItem(pub u64);
 
 impl fmt::Display for SteamWorkshopItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

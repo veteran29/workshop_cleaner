@@ -1,18 +1,27 @@
 use std::fmt::{Debug, Display};
+use std::num::NonZeroU64;
 
-use controller::{AppListController, MainController};
+use controller::MainController;
 use data::{AppState, SteamApp, SteamWorkshopItem};
 use druid::im::{vector, Vector};
 use druid::lens::{self, LensExt};
-use druid::widget::{Button, Either, Flex, Label, List, Scroll, Split};
-use druid::{AppLauncher, Color, Data, EventCtx, Lens, UnitPoint, Widget, WidgetExt, WindowDesc};
+use druid::widget::{
+    Button, Container, Either, Flex, Label, LensWrap, List, Scroll, Split, ViewSwitcher,
+};
+use druid::{
+    AppLauncher, Color, Data, EventCtx, ImageBuf, Lens, Rect, UnitPoint, Widget, WidgetExt,
+    WidgetId, WindowDesc,
+};
+use widget::list::NavList;
 
-use crate::{controller::AppListItemController, delegate::Delegate};
+use delegate::Delegate;
 
 mod cmd;
 mod controller;
 mod data;
 mod delegate;
+mod ui;
+mod widget;
 
 fn main() {
     let main_window = WindowDesc::new(ui_builder)
@@ -28,31 +37,10 @@ fn main() {
 
 const MAIN_LAYOUT_SPLIT_POINT: f64 = 0.3;
 
+type NavListState = (Option<Vector<SteamApp>>, Option<SteamApp>);
+
 fn ui_builder() -> impl Widget<AppState> {
-    // TODO move to module, LayoutSwitcher
-    let apps_col = Scroll::new(Either::new(
-        |data: &Option<Vector<SteamApp>>, _env| data.is_some(),
-        app_list_widget(),
-        Label::new("Scanning for apps...")
-            .padding(20.)
-            .align_horizontal(UnitPoint::CENTER)
-            .expand_width(),
-    ))
-    .vertical()
-    .lens(AppState::apps);
-
-    let items_col = Scroll::new(Either::new(
-        |data: &Vector<SteamWorkshopItem>, _env| !data.is_empty(),
-        List::new(item_widget),
-        Label::new("Nothing found, your workshop is clean")
-            .padding(20.)
-            .align_horizontal(UnitPoint::CENTER)
-            .expand_width(),
-    ))
-    .vertical()
-    .lens(AppState::items);
-
-    Split::columns(apps_col, items_col)
+    Split::columns(nav_list_widget(), items_widget())
         .split_point(MAIN_LAYOUT_SPLIT_POINT)
         .solid_bar(true)
         .draggable(true)
@@ -60,35 +48,76 @@ fn ui_builder() -> impl Widget<AppState> {
     // .debug_paint_layout()
 }
 
-const LIST_ITEM_HEIGHT: f64 = 50.0;
-const LIST_ITEM_PADDING: f64 = 10.0;
-
-fn app_list_widget() -> impl Widget<Option<Vector<SteamApp>>> {
-    Either::new(
-        |data: &Vector<SteamApp>, _env| !data.is_empty(),
-        List::new(app_list_item_widget).controller(AppListController::new()),
-        Label::new("No workshop apps")
-            .padding(20.)
-            .align_horizontal(UnitPoint::CENTER)
-            .expand_width(),
+fn nav_list_widget() -> impl Widget<AppState> {
+    let view_switcher = ViewSwitcher::new(
+        |(items, _): &NavListState, _| items.clone(),
+        |items, _, _| match items {
+            Some(_) => Box::new(app_list_widget()),
+            None => Box::new(
+                Label::new("Scanning for apps...")
+                    .padding(20.)
+                    .align_horizontal(UnitPoint::TOP)
+                    .expand(),
+            ),
+        },
     )
-    .lens(lens::Identity.map(
-        |d: &Option<Vector<SteamApp>>| d.clone().unwrap_or_else(|| vector![]),
-        |_d, _input| (),
-    )) // TODO pass tuple of item and currently selected app to the list so it can dynamically detect which one is selected
+    .lens(lens::Map::new(
+        |data: &AppState| (data.apps.clone(), data.selected_app.clone()),
+        |_, _| (),
+    ));
+
+    Container::new(view_switcher)
 }
 
-fn app_list_item_widget() -> impl Widget<SteamApp> {
-    let label =
-        Label::new(|item: &SteamApp, _env: &_| format!("{}", item)).align_vertical(UnitPoint::LEFT);
+fn app_list_widget() -> impl Widget<NavListState> {
+    let list = widget::list::NavList::new(|ctx, data: &SteamApp| {
+        ctx.submit_command(cmd::SELECT_STEAM_APP.with(data.clone()))
+    });
 
-    Flex::row()
-        .with_child(label)
-        .padding(LIST_ITEM_PADDING)
-        .expand_width()
-        .height(LIST_ITEM_HEIGHT)
-        .background(Color::from_hex_str("0000").unwrap())
-        .controller(AppListItemController::new())
+    Scroll::new(list).vertical()
+}
+
+fn items_widget() -> impl Widget<AppState> {
+    let view_switcher = ViewSwitcher::new(
+        |data: &AppState, _| data.selected_app.clone(),
+        |selected_app, _, _| match selected_app {
+            Some(_) => Box::new(Either::new(
+                |data: &AppState, _| !data.selected_app_confirmed,
+                items_confirm_widget(),
+                Either::new(
+                    |data: &AppState, _| !data.items.is_empty(),
+                    List::new(item_widget).lens(AppState::items),
+                    Label::new("Nothing found, your workshop is clean.")
+                        .padding(20.)
+                        .align_horizontal(UnitPoint::TOP)
+                        .expand(),
+                ),
+            )),
+            None => Box::new(
+                Label::new("Select app to continue...")
+                    .padding(20.)
+                    .align_horizontal(UnitPoint::TOP)
+                    .expand_width(),
+            ),
+        },
+    );
+
+    Container::new(view_switcher)
+}
+
+fn items_confirm_widget() -> impl Widget<AppState> {
+    let widget = Flex::column();
+
+    let label = Label::new(
+        "Please confirm app selection, you will need to restart the application to change it.",
+    )
+    .padding(20.)
+    .align_horizontal(UnitPoint::TOP)
+    .expand_width();
+    let button =
+        Button::new("Confirm").on_click(|ctx, _, _| ctx.submit_command(cmd::CONFIRM_STEAM_APP));
+
+    widget.with_child(label).with_child(button)
 }
 
 fn item_widget<T>() -> impl Widget<T>
@@ -105,7 +134,7 @@ where
                 .fix_size(80.0, 30.0)
                 .align_vertical(UnitPoint::CENTER),
         )
-        .padding(LIST_ITEM_PADDING)
+        .padding(ui::theme::NAV_LIST_ITEM_PADDING)
         .background(Color::rgb(0.5, 0.0, 0.5))
-        .fix_height(LIST_ITEM_HEIGHT)
+        .fix_height(ui::theme::NAV_LIST_ITEM_HEIGHT)
 }

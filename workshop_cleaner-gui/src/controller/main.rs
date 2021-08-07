@@ -22,8 +22,6 @@ impl MainController {
         _env: &druid::Env,
     ) {
         // Initialize apps list
-        data.apps = None;
-
         let sink = ctx.get_external_handle();
         std::thread::spawn(move || {
             let apps: Vector<SteamApp> = SteamLocator::new()
@@ -35,6 +33,9 @@ impl MainController {
                     workshop_items: vector!(),
                 })
                 .collect();
+
+            #[cfg(debug_assertions)]
+            std::thread::sleep(std::time::Duration::from_secs(1));
 
             sink.submit_command(cmd::SET_STEAM_APPS, apps, Target::Auto)
                 .expect("Failed to send command");

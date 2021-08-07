@@ -13,7 +13,13 @@ pub fn init(app_id: AppId) -> Result<WorkshopCleaner, String> {
     std::fs::write("steam_appid.txt", format!("{}", app_id.0))
         .expect("Failed to write steam_appid.txt");
 
-    let (client, single) = Client::init().unwrap();
+    let client_result = Client::init();
+
+    if client_result.is_err() {
+        return Err("Failed to init Steam client".to_string());
+    }
+
+    let (client, single) = client_result.unwrap();
 
     thread::spawn(move || loop {
         single.run_callbacks();
