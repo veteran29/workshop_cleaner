@@ -1,12 +1,12 @@
 use std::{cmp::Ordering, fmt::Display};
 
 use druid::{
-    widget::{Axis, Container, Controller, Flex, Label, ListIter, Widget},
-    BoxConstraints, Color, Command, Cursor, Data, Env, EventCtx, KeyOrValue, LifeCycle, Point,
-    Rect, RenderContext, Selector, Size, Target, UnitPoint, WidgetExt, WidgetPod,
+    widget::{Axis, Flex, Label, ListIter, Widget},
+    BoxConstraints, Color, Data, Env, EventCtx, KeyOrValue, LifeCycle, Point, Rect, RenderContext,
+    Selector, Size, UnitPoint, WidgetExt, WidgetPod,
 };
 
-use crate::{cmd as command, ui};
+use crate::ui;
 
 type FnOnSelected<C> = dyn Fn(&mut EventCtx, &C);
 
@@ -283,20 +283,6 @@ impl<I: Data + Display> Widget<(I, bool)> for NavListItem<I> {
             druid::Event::MouseDown(_) => {
                 ctx.submit_notification(NavList::on_click_selector().with(data.clone()));
             }
-            druid::Event::Command(cmd) => {
-                // if let Some(app) = cmd.get(command::SELECT_STEAM_APP) {
-                //     // let selected = app.app_id == data.app_id;
-                //     // self.on_selected(child, ctx, selected);
-                // }
-
-                // if let Some(hot) = cmd.get(SET_FOCUS) {
-                //     self.on_selected(child, ctx);
-                // }
-
-                // if let Some(hot) = cmd.get(SET_HOVER) {
-                //     self.on_hover(child, ctx, *hot);
-                // }
-            }
             _ => (),
         }
 
@@ -378,115 +364,5 @@ impl<I: Data + Display> Widget<(I, bool)> for NavListItem<I> {
 
             child.paint_raw(ctx, data, env);
         }
-    }
-}
-
-pub struct NavListItemController {
-    hover: bool,
-    selected: bool,
-}
-
-impl NavListItemController {
-    pub fn new() -> Self {
-        NavListItemController {
-            hover: false,
-            selected: false,
-        }
-    }
-
-    fn on_hover<T: Data>(
-        &mut self,
-        child: &mut Container<T>,
-        ctx: &mut druid::EventCtx,
-        hover: bool,
-    ) {
-        if hover != self.hover {
-            self.hover = hover;
-
-            if hover {
-                ctx.set_cursor(&Cursor::OpenHand);
-            } else {
-                ctx.clear_cursor();
-            }
-
-            self.paint_background(child, ctx);
-        }
-    }
-
-    fn on_selected<T: Data>(&mut self, child: &mut Container<T>, ctx: &mut druid::EventCtx) {
-        self.paint_background(child, ctx);
-        ctx.request_paint();
-    }
-
-    fn paint_background<T: Data>(&self, child: &mut Container<T>, ctx: &mut druid::EventCtx) {
-        let color = match (self.hover, ctx.is_focused()) {
-            (true, true) => Color::RED,
-            (false, true) => Color::MAROON,
-            (true, false) => Color::GRAY,
-            _ => ui::theme::COLOR_TRANSPARENT,
-        };
-
-        child.set_background(color);
-    }
-}
-
-const SET_HOVER: Selector<bool> = Selector::new("nav-list.hover");
-const SET_FOCUS: Selector<bool> = Selector::new("nav-list.focus");
-
-impl<T: Data> Controller<T, Container<T>> for NavListItemController {
-    fn event(
-        &mut self,
-        child: &mut Container<T>,
-        ctx: &mut druid::EventCtx,
-        event: &druid::Event,
-        data: &mut T,
-        env: &druid::Env,
-    ) {
-        match event {
-            druid::Event::MouseDown(_) => {
-                // ctx.get_external_handle()
-                //     .submit_command(command::SELECT_STEAM_APP, data.clone(), Target::Auto)
-                //     .expect("Failed to send command");
-                ctx.set_focus(ctx.widget_id());
-            }
-            druid::Event::Command(cmd) => {
-                if let Some(app) = cmd.get(command::SELECT_STEAM_APP) {
-                    // let selected = app.app_id == data.app_id;
-                    // self.on_selected(child, ctx, selected);
-                }
-
-                if let Some(hot) = cmd.get(SET_FOCUS) {
-                    self.on_selected(child, ctx);
-                }
-
-                if let Some(hot) = cmd.get(SET_HOVER) {
-                    self.on_hover(child, ctx, *hot);
-                }
-            }
-            _ => (),
-        }
-
-        child.event(ctx, event, data, env)
-    }
-
-    fn lifecycle(
-        &mut self,
-        child: &mut Container<T>,
-        ctx: &mut druid::LifeCycleCtx,
-        event: &druid::LifeCycle,
-        data: &T,
-        env: &druid::Env,
-    ) {
-        match event {
-            druid::LifeCycle::HotChanged(hot) => {
-                ctx.submit_command(SET_HOVER.with(*hot).to(Target::Widget(ctx.widget_id())));
-            }
-            druid::LifeCycle::FocusChanged(focus) => {
-                ctx.submit_command(SET_FOCUS.with(*focus).to(Target::Widget(ctx.widget_id())));
-            }
-            _ => (),
-        }
-
-        child.lifecycle(ctx, event, data, env)
     }
 }
