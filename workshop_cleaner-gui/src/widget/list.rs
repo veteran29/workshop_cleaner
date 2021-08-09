@@ -31,9 +31,7 @@ impl<C: Data + Display> NavList<C> {
         }
     }
 
-    fn on_click_selector() -> Selector<C> {
-        Selector::new("nav-item.on-click")
-    }
+    const SELECTOR_ON_CLICK: Selector<C> = Selector::new("naw-item.on-click");
 
     /// When the widget is created or the data changes, create or remove children as needed
     ///
@@ -88,7 +86,7 @@ where
     ) {
         match event {
             druid::Event::Notification(notification) => {
-                if let Some(payload) = notification.get(Self::on_click_selector()) {
+                if let Some(payload) = notification.get(Self::SELECTOR_ON_CLICK) {
                     (self.on_selected)(ctx, payload);
                     return ctx.set_handled();
                 }
@@ -281,7 +279,7 @@ impl<I: Data + Display> Widget<(I, bool)> for NavListItem<I> {
     ) {
         match event {
             druid::Event::MouseDown(_) => {
-                ctx.submit_notification(NavList::on_click_selector().with(data.clone()));
+                ctx.submit_notification(NavList::SELECTOR_ON_CLICK.with(data.clone()));
             }
             _ => (),
         }
