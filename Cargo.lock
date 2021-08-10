@@ -2562,6 +2562,12 @@ name = "workshop_cleaner-gui"
 version = "0.0.3"
 dependencies = [
  "druid",
+ "humansize",
+ "lazy_static",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "steam-workshop-api",
  "winres",
  "workshop_cleaner-core",
 ]

@@ -9,6 +9,12 @@ edition = "2018"
 workshop_cleaner-core = { path = "../workshop_cleaner-core" }
 
 druid = { version = "0.7.0", features = ["im"]}
+lazy_static = "1.4.0"
+reqwest = "0.11.4"
+steam-workshop-api = "0.2.5"
+serde = "1.0.126"
+serde_json = "1.0"
+humansize = "1.1.1"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.11"

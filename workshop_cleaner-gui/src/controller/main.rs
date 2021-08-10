@@ -2,6 +2,7 @@ use druid::im::{vector, Vector};
 use druid::{widget::Controller, Target, Widget};
 use workshop_cleaner_core::locator::SteamLocator;
 
+use crate::steam;
 use crate::{
     cmd,
     data::{AppState, SteamApp},
@@ -29,13 +30,10 @@ impl MainController {
                 .iter()
                 .map(|a| SteamApp {
                     app_id: a.0,
-                    name: "Unkown".to_string(),
+                    name: steam::get_app_item_name(a).unwrap_or("Unkown".to_string()),
                     workshop_items: vector!(),
                 })
                 .collect();
-
-            #[cfg(debug_assertions)]
-            std::thread::sleep(std::time::Duration::from_secs(1));
 
             sink.submit_command(cmd::SET_STEAM_APPS, apps, Target::Auto)
                 .expect("Failed to send command");

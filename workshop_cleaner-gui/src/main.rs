@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use std::fmt::{Debug, Display};
 use std::num::NonZeroU64;
 
@@ -20,6 +23,7 @@ mod cmd;
 mod controller;
 mod data;
 mod delegate;
+mod steam;
 mod ui;
 mod widget;
 
