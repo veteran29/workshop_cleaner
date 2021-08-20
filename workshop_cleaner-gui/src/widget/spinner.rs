@@ -1,8 +1,7 @@
-use std::f64::consts::PI;
-
 use druid::{
-    kurbo::Circle, BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, RenderContext, Size, UpdateCtx, Vec2, Widget, WidgetExt,
+    kurbo::{CircleSegment},
+    BoxConstraints, Color, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
+    PaintCtx, RenderContext, Size, UpdateCtx, Widget, WidgetExt,
 };
 
 use crate::ui::theme;
@@ -14,16 +13,16 @@ struct Spinner {
 
 impl Spinner {
     pub fn new() -> Self {
-        Self { t: 0.0 }
+        Self { t: 360.0 }
     }
 }
 
 impl<T: Data> Widget<T> for Spinner {
     fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
         if let Event::AnimFrame(interval) = event {
-            self.t += (*interval as f64) * 1e-9;
-            if self.t >= 1.0 {
-                self.t = 0.0;
+            self.t -= (*interval as f64) * 1e-7 * 3.;
+            if self.t <= 0.0 {
+                self.t = 360.0;
             }
             ctx.request_anim_frame();
             ctx.request_paint();
@@ -46,24 +45,29 @@ impl<T: Data> Widget<T> for Spinner {
         _data: &T,
         _env: &Env,
     ) -> Size {
-        bc.constrain(Size::new(theme::grid(6.0), theme::grid(16.0)))
+        bc.constrain(Size::new(theme::grid(8.0), theme::grid(8.0)))
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, _env: &Env) {
         let center = ctx.size().to_rect().center();
-        let c0 = theme::COLOR_GREY_500;
-        let c1 = theme::COLOR_GREY_400;
-        let active = 7 - (1 + (6.0 * self.t).floor() as i32);
-        for i in 1..=6 {
-            let step = f64::from(i);
-            let angle = Vec2::from_angle((step / 6.0) * -2.0 * PI);
-            let dot_center = center + angle * theme::grid(2.0);
-            let dot = Circle::new(dot_center, theme::grid(0.8));
-            if i == active {
-                ctx.fill(dot, &c1);
-            } else {
-                ctx.fill(dot, &c0);
-            }
+
+        for i in 1..=360 {
+            if i % 5 != 0 {
+                continue;
+            };
+
+            let segment = CircleSegment {
+                center,
+                inner_radius: 18.0,
+                outer_radius: 25.0,
+                start_angle: (i as f64).to_radians(),
+                sweep_angle: (10 as f64).to_radians(),
+            };
+
+            let deg = ((i as f64) + self.t) % 360.0;
+            let alpha = (360.0 - (deg * 0.95)) / 360.0;
+
+            ctx.fill(segment, &Color::WHITE.with_alpha(1.0 - alpha * 1.3));
         }
     }
 }
