@@ -1,8 +1,8 @@
 use std::f64::consts::PI;
 
 use druid::{
-    kurbo::Circle, BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, RenderContext, Size, UpdateCtx, Vec2, Widget, WidgetExt,
+    kurbo::Circle, BoxConstraints, Color, Data, Env, Event, EventCtx, LayoutCtx, LifeCycle,
+    LifeCycleCtx, PaintCtx, RenderContext, Size, UpdateCtx, Vec2, Widget, WidgetExt,
 };
 
 use crate::ui::theme;
@@ -46,13 +46,13 @@ impl<T: Data> Widget<T> for Spinner {
         _data: &T,
         _env: &Env,
     ) -> Size {
-        bc.constrain(Size::new(theme::grid(6.0), theme::grid(16.0)))
+        bc.constrain(Size::new(theme::grid(6.0), theme::grid(6.0)))
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, env: &Env) {
         let center = ctx.size().to_rect().center();
-        let c0 = theme::COLOR_GREY_500;
-        let c1 = theme::COLOR_GREY_400;
+        let c0 = theme::COLOR_GREY_400;
+        let c1 = Color::WHITE;
         let active = 7 - (1 + (6.0 * self.t).floor() as i32);
         for i in 1..=6 {
             let step = f64::from(i);
