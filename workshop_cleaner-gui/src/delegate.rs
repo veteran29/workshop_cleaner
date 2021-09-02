@@ -4,14 +4,15 @@ use workshop_cleaner_core::AppId;
 use crate::{
     cmd as commands,
     data::{AppState, SteamWorkshopItem},
-    item_widget,
 };
 
-pub struct Delegate {}
+pub struct Delegate {
+    cleaner: Option<workshop_cleaner_core::cleaner::WorkshopCleaner>,
+}
 
 impl Delegate {
     pub fn new() -> Self {
-        Delegate {}
+        Delegate { cleaner: None }
     }
 }
 
@@ -51,7 +52,11 @@ impl AppDelegate<AppState> for Delegate {
                 return Handled::Yes;
             }
 
-            data.items = client
+            self.cleaner = Some(client.unwrap());
+
+            data.items = self
+                .cleaner
+                .as_ref()
                 .unwrap()
                 .get_installed_not_subscribed_items()
                 .into_iter()
