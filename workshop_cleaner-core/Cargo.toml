@@ -1,11 +1,11 @@
 [package]
 name = "workshop_cleaner-core"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 fs_extra = "1.2.0"
-steamlocate = "0.1.4"
+steamlocate = "1.2.1"
 steamworks = "0.7.0"

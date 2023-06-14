@@ -25,7 +25,7 @@ impl SteamLocator {
 
         let workshop_apps: Vec<AppId> = libraries
             .iter()
-            .map(|p| fs::read_dir(format!("{}\\workshop\\content", p.to_str().unwrap())).unwrap())
+            .filter_map(|p| fs::read_dir(format!("{}\\workshop\\content", p.to_str().unwrap())).ok())
             .flat_map(|r| {
                 let app_ids: Vec<AppId> = r
                     .filter_map(|p| p.ok())
@@ -39,4 +39,13 @@ impl SteamLocator {
 
         workshop_apps
     }
+}
+
+#[test]
+fn test_locator() {
+    let mut locator = SteamLocator::new();
+
+    locator.get_installed_workshop_apps();
+
+    ()
 }
